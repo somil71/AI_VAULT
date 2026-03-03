@@ -1,0 +1,27 @@
+[
+  {
+    "category": "upi_scam",
+    "pattern": "Please approve collect request to receive refund instantly."
+  },
+  {
+    "category": "bank_impersonation",
+    "pattern": "Your KYC is pending. Verify account in 24 hours to avoid suspension."
+  },
+  {
+    "category": "authority_impersonation",
+    "pattern": "Government official notice: pay penalty immediately to avoid legal action."
+  },
+  {
+    "category": "fake_job_fraud",
+    "pattern": "Congratulations! Pay interview processing fee to confirm remote job offer."
+  },
+  {
+    "category": "deepfake_impersonation",
+    "pattern": "Urgent video verification required. Share OTP to confirm identity."
+  },
+  {
+    "category": "general_phishing",
+    "pattern": "Account security alert: click link and sign in to keep account active."
+  }
+]
+

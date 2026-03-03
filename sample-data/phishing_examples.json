@@ -1,0 +1,42 @@
+{
+  "phishing_messages": [
+    {
+      "id": 1,
+      "type": "email",
+      "text": "URGENT: Your bank account has been suspended! Click here immediately to verify your identity or your account will be permanently closed within 24 hours. Visit: http://secure-bank-verify.xyz/login",
+      "expected_score": 95
+    },
+    {
+      "id": 2,
+      "type": "sms",
+      "text": "Congratulations! You've won $5000 cash prize. To claim your reward, send your SSN and bank account number to prizes@totallyreal.org",
+      "expected_score": 98
+    },
+    {
+      "id": 3,
+      "type": "email",
+      "text": "Dear valued customer, we noticed unusual activity on your PayPal account. Please confirm your password at: http://paypa1-secure.com/verify",
+      "expected_score": 92
+    },
+    {
+      "id": 4,
+      "type": "sms",
+      "text": "Your Amazon package is on hold. Update your delivery info now: http://amaz0n-delivery.net/track",
+      "expected_score": 85
+    },
+    {
+      "id": 5,
+      "type": "email",
+      "text": "Hi, just wanted to confirm our meeting tomorrow at 3pm. Let me know if you need to reschedule.",
+      "expected_score": 5
+    }
+  ],
+  "suspicious_urls": [
+    "http://secure-bank-verify.xyz/login",
+    "http://paypa1-secure.com/verify",
+    "http://amaz0n-delivery.net/track",
+    "http://g00gle-accounts.net/signin",
+    "https://www.google.com",
+    "https://www.amazon.com/orders"
+  ]
+}

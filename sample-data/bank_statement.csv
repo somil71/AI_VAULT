@@ -1,0 +1,31 @@
+date,description,amount,merchant,category
+2024-01-02,Coffee Shop,4.50,Starbucks,Food
+2024-01-03,Grocery Store,87.23,Whole Foods,Groceries
+2024-01-04,Gas Station,45.00,Shell,Transport
+2024-01-05,Coffee Shop,5.00,Starbucks,Food
+2024-01-06,Restaurant,32.50,Chipotle,Food
+2024-01-07,Grocery Store,91.10,Whole Foods,Groceries
+2024-01-08,Coffee Shop,4.75,Starbucks,Food
+2024-01-09,Online Transfer,12500.00,Unknown Merchant XYZ,Transfer
+2024-01-10,ATM Withdrawal,200.00,Bank ATM,Cash
+2024-01-11,Coffee Shop,4.50,Starbucks,Food
+2024-01-12,Restaurant,28.40,Pizza Hut,Food
+2024-01-13,Grocery Store,95.20,Whole Foods,Groceries
+2024-01-14,Gas Station,48.00,BP,Transport
+2024-01-15,Coffee Shop,4.50,Starbucks,Food
+2024-01-16,Subscription,9.99,Netflix,Entertainment
+2024-01-17,Coffee Shop,4.50,Starbucks,Food
+2024-01-18,Restaurant,22.00,McDonald's,Food
+2024-01-19,Grocery Store,102.30,Trader Joe's,Groceries
+2024-01-20,SUSPICIOUS WIRE,8900.00,OFFSHORE ACCT 447,Transfer
+2024-01-21,Coffee Shop,4.75,Starbucks,Food
+2024-01-22,Gas Station,50.00,Shell,Transport
+2024-01-23,Coffee Shop,4.50,Starbucks,Food
+2024-01-24,Restaurant,35.00,Sushi Place,Food
+2024-01-25,Grocery Store,88.50,Whole Foods,Groceries
+2024-01-26,Coffee Shop,4.50,Starbucks,Food
+2024-01-27,ATM Withdrawal,500.00,Unknown ATM,Cash
+2024-01-28,Coffee Shop,4.75,Starbucks,Food
+2024-01-29,Pharmacy,18.50,CVS,Health
+2024-01-30,NIGHT PURCHASE,2200.00,Crypto Exchange BitX,Transfer
+2024-01-31,Coffee Shop,4.50,Starbucks,Food

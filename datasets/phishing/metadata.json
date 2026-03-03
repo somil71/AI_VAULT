@@ -1,0 +1,56 @@
+{
+    "dataset_name": "LifeVault-Phishing-v1",
+    "version": "1.0.0",
+    "schema": [
+        {
+            "name": "id",
+            "type": "uuid",
+            "description": "Unique identifier for the sample"
+        },
+        {
+            "name": "text_content",
+            "type": "string",
+            "description": "Raw body of the message or email"
+        },
+        {
+            "name": "url",
+            "type": "string",
+            "description": "The URL being analyzed"
+        },
+        {
+            "name": "domain_age_days",
+            "type": "int",
+            "description": "Age of the domain in days"
+        },
+        {
+            "name": "ssl_valid",
+            "type": "boolean",
+            "description": "Whether the domain has a valid SSL cert"
+        },
+        {
+            "name": "tld",
+            "type": "string",
+            "description": "Top Level Domain (e.g. .com, .xyz)"
+        },
+        {
+            "name": "label",
+            "type": "int",
+            "description": "0 = Legitimate, 1 = Phishing"
+        },
+        {
+            "name": "source",
+            "type": "string",
+            "description": "Data source (e.g. PhishTank)"
+        },
+        {
+            "name": "created_at",
+            "type": "timestamp",
+            "description": "Time of sample acquisition"
+        }
+    ],
+    "training_config": {
+        "model": "deberta-v3-large",
+        "params": "435M",
+        "split": "80/10/10"
+    }
+}

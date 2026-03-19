@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -8,10 +8,11 @@ import { appendAuditLog, trackKnownUser } from "@/lib/localData";
 type AuthContextType = {
     token: string | null;
     userEmail: string | null;
+    user: any | null;
     isAuthenticated: boolean;
     authLoading: boolean;
     ensureAuth: () => Promise<boolean>;
-    loginWithWalletSignature: (walletAddress: string) => Promise<boolean>;
+    loginWithWalletSignature: (walletAddress: string, referralCode?: string) => Promise<boolean>;
     logout: () => void;
 };
 
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [token, setToken] = useState<string | null>(null);
     const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [user, setUser] = useState<any | null>(null);
     const [authLoading, setAuthLoading] = useState(true);
 
     useEffect(() => {
@@ -33,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
                 const me = await getCurrentUser();
                 setUserEmail(me?.email || null);
+                setUser(me);
                 trackKnownUser({ email: me?.email || null });
             } catch {
                 clearJwt();
@@ -73,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const result = await acquireDemoJwt();
             setToken(result.token);
             setUserEmail(result.user?.email || "demo@lifevault.ai");
+            setUser(result.user);
             trackKnownUser({ email: result.user?.email || "demo@lifevault.ai" });
             appendAuditLog({ type: "auth", message: "Demo JWT session created" });
             toast.success("JWT ready for protected flows");
@@ -83,17 +87,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const loginWithWalletSignature = async (walletAddress: string) => {
+    const loginWithWalletSignature = async (walletAddress: string, referralCode?: string) => {
         if (!walletAddress) {
             toast.error("Connect wallet first");
             return false;
         }
 
         try {
-            const verified = await loginWithWalletSignatureApi(walletAddress);
+            const verified = await loginWithWalletSignatureApi(walletAddress, referralCode);
 
             setToken(verified.token);
             setUserEmail(verified.user?.email || `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`);
+            setUser(verified.user);
             trackKnownUser({ email: verified.user?.email || null, walletAddress });
             appendAuditLog({ type: "auth", message: "Wallet signature sign-in successful", metadata: { walletAddress } });
             toast.success("Signed in with wallet");
@@ -116,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <AuthContext.Provider
-            value={{ token, userEmail, isAuthenticated, authLoading, ensureAuth, loginWithWalletSignature, logout }}
+            value={{ token, userEmail, user, isAuthenticated, authLoading, ensureAuth, loginWithWalletSignature, logout }}
         >
             {children}
         </AuthContext.Provider>

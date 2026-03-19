@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LifeVault SDK Demo</title>
+    <script src="../../sdk/LifeVaultSDK.js"></script>
+    <style>
+        body { background: #0a0f1e; color: #fff; font-family: system-ui; padding: 50px; }
+        .box { max-width: 500px; margin: auto; padding: 30px; border: 1px solid #1e293b; border-radius: 15px; background: #0f172a; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #020617; color: #fff; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #0ea5e9; border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; }
+        #results { margin-top: 20px; padding: 15px; border-radius: 8px; font-size: 13px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <div id="lv-badge"></div>
+        <h2>Scan for Threats</h2>
+        <p style="color: #94a3b8; font-size: 14px;">Paste a URL to test the White-Label SDK implementation.</p>
+        <input type="text" id="url-input" placeholder="https://..." value="https://scam-site.com">
+        <button onclick="handleScan()">Run Security Scan</button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Initialize SDK
+        const lv = new LifeVaultSDK({
+            apiKey: "lv_demo_key_123456", // In reality, fetch from user dashboard
+            baseUrl: "http://localhost:3000/api/v1" 
+        });
+
+        // Attach badge
+        lv.attachBadge("lv-badge");
+
+        async function handleScan() {
+            const url = document.getElementById("url-input").value;
+            const resDiv = document.getElementById("results");
+            resDiv.style.display = "block";
+            resDiv.innerHTML = "Analyzing...";
+            resDiv.style.background = "#1e293b";
+
+            const result = await lv.scanUrl(url);
+            
+            if (result.status === "success") {
+                const risk = result.data.risk_score;
+                resDiv.style.background = risk > 0.6 ? "#450a0a" : "#064e3b";
+                resDiv.innerHTML = `<strong>Status:</strong> \${result.status.toUpperCase()}<br><strong>Risk Score:</strong> \${(risk * 100).toFixed(1)}%<br><strong>Level:</strong> \${result.data.risk_level}`;
+            } else {
+                resDiv.innerHTML = "Error: " + (result.message || "Failed to scan");
+                resDiv.style.background = "#450a0a";
+            }
+        }
+    </script>
+</body>
+</html>

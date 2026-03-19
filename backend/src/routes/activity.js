@@ -115,4 +115,28 @@ router.get("/summary", auth, async (req, res) => {
     }
 });
 
+/**
+ * GET /api/v1/activity/export
+ * Export activity events in CSV or JSON format.
+ */
+router.get("/export", auth, async (req, res) => {
+    try {
+        const format = req.query.format || "csv";
+        const filter = buildUserFilter(req);
+        const { AuditExportService } = require("../services/auditExportService");
+
+        if (format === "csv") {
+            const csv = await AuditExportService.generateCsv(req.userId, filter);
+            res.setHeader("Content-Type", "text/csv");
+            res.setHeader("Content-Disposition", `attachment; filename=lifevault_audit_${Date.now()}.csv`);
+            return res.send(csv);
+        }
+
+        const events = await ActivityEvent.find(filter).sort({ createdAt: -1 });
+        return res.json({ status: "success", data: events });
+    } catch (error) {
+        return res.status(500).json({ status: "error", error: "ExportFailed", message: error.message });
+    }
+});
+
 module.exports = router;

@@ -1,48 +1,61 @@
 const express = require("express");
-const { mintIdentityNFT, storeDocumentHash } = require("../services/blockchain");
+const { VaultService } = require("../services/vaultService");
 const auth = require("../middleware/auth");
-const requireRole = require("../middleware/requireRole");
 const { createAccessLogger } = require("../services/securityAudit");
 
 const router = express.Router();
+const success = (res, data) => res.json({ status: "success", data });
 
-router.get("/status", (req, res) => {
-    return res.json({
-        success: true,
-        data: {
-            message: "Vault service operational",
-            identityContract: process.env.IDENTITY_CONTRACT || process.env.IDENTITY_NFT_ADDRESS || null,
-            vaultContract: process.env.VAULT_CONTRACT || process.env.VAULT_REGISTRY_ADDRESS || null,
-        },
-    });
-});
-
-router.post("/mint-identity", createAccessLogger("sensitive_blockchain_relay_access", { relay: "vault.mintIdentityNFT" }), auth, requireRole(["user", "admin"]), async (req, res) => {
+/**
+ * List all Vaults accessible to user
+ */
+router.get("/list", auth, async (req, res) => {
     try {
-        const { walletAddress } = req.body || {};
-        if (!walletAddress) {
-            return res.status(400).json({ success: false, error: "walletAddress is required" });
-        }
-
-        const result = await mintIdentityNFT(walletAddress);
-        return res.json({ success: true, data: result });
+        const vaults = await VaultService.listUserVaults(req.userId);
+        return success(res, vaults);
     } catch (error) {
-        return res.status(500).json({ success: false, error: error.message });
+        return res.status(500).json({ status: "error", message: error.message });
     }
 });
 
-router.post("/upload-document", createAccessLogger("sensitive_blockchain_relay_access", { relay: "vault.storeDocumentHash" }), auth, requireRole(["user", "admin"]), async (req, res) => {
+/**
+ * Create a new Team Vault
+ */
+router.post("/create", auth, async (req, res) => {
     try {
-        const { hash } = req.body || {};
-        if (!hash) {
-            return res.status(400).json({ success: false, error: "hash is required" });
-        }
-
-        const result = await storeDocumentHash(hash);
-        return res.json({ success: true, data: result });
+        const { name, description } = req.body;
+        if (!name) return res.status(400).json({ error: "Name required" });
+        const vault = await VaultService.createVault(req.userId, name, description);
+        return success(res, vault);
     } catch (error) {
-        return res.status(500).json({ success: false, error: error.message });
+        return res.status(500).json({ status: "error", message: error.message });
+    }
+});
+
+/**
+ * Invite member to Vault
+ */
+router.post("/invite", auth, async (req, res) => {
+    try {
+        const { vaultId, email, role } = req.body;
+        const vault = await VaultService.addMember(vaultId, req.userId, email, role);
+        return success(res, vault);
+    } catch (error) {
+        return res.status(500).json({ status: "error", message: error.message });
+    }
+});
+
+/**
+ * List items in a specific vault
+ */
+router.get("/:vaultId/items", auth, async (req, res) => {
+    try {
+        const items = await VaultService.listVaultItems(req.params.vaultId, req.userId);
+        return success(res, items);
+    } catch (error) {
+        return res.status(403).json({ status: "error", message: error.message });
     }
 });
 
 module.exports = router;
+

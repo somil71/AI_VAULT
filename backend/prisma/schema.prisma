@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it at: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────
+model User {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  walletAddress   String?   @unique @map("wallet_address")
+  role            String    @default("user")
+  mfaSecret       String?   @map("mfa_secret")
+  mfaEnabled      Boolean   @default(false) @map("mfa_enabled")
+  failedAttempts  Int       @default(0) @map("failed_attempts")
+  lockedUntil     DateTime? @map("locked_until")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  lastLoginAt     DateTime? @map("last_login_at")
+
+  vaultDocuments  VaultDocument[]
+  threatEvents    ThreatEvent[]
+  securityEvents  SecurityEvent[]
+  refreshTokens   RefreshToken[]
+
+  @@map("users")
+}
+
+// ── Vault Documents ───────────────────────────────────────────────────────
+model VaultDocument {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  filename        String
+  encryptedDEK    Bytes    @map("encrypted_dek")
+  iv              Bytes
+  authTag         Bytes    @map("auth_tag")
+  dekIv           Bytes    @map("dek_iv")
+  dekAuthTag      Bytes    @map("dek_auth_tag")
+  contentHash     String   @map("content_hash")
+  onChainTxHash   String?  @map("on_chain_tx_hash")
+  sizeBytes       Int      @map("size_bytes")
+  mimeType        String?  @map("mime_type")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("vault_documents")
+}
+
+// ── Threat Events ─────────────────────────────────────────────────────────
+model ThreatEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  type        String   // url, text, transaction, combined
+  score       Float
+  level       String   // CRITICAL, HIGH, MEDIUM, LOW
+  input       Json?    // The analyzed input (sanitized)
+  details     Json?    // Full analysis result
+  action      String   // BLOCK, WARN, ALLOW
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([level])
+  @@index([createdAt])
+  @@map("threat_events")
+}
+
+// ── Security Events ───────────────────────────────────────────────────────
+model SecurityEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String?  @map("user_id") @db.Uuid
+  eventType   String   @map("event_type") // login, mfa_setup, lockout, etc.
+  ip          String?
+  userAgent   String?  @map("user_agent")
+  success     Boolean
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("security_events")
+}
+
+// ── Refresh Tokens ────────────────────────────────────────────────────────
+model RefreshToken {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  tokenHash   String    @unique @map("token_hash")
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdByIp String?   @map("created_by_ip")
+  userAgent   String?   @map("user_agent")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}

@@ -3,6 +3,8 @@ const axios = require("axios");
 const multer = require("multer");
 const auth = require("../middleware/auth");
 const AnomalyResult = require("../models/AnomalyResult");
+const { strictLimiter } = require("../middleware/rateLimiter");
+const { abuseMonitor } = require("../middleware/abuseMonitor");
 
 const router = express.Router();
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000";
@@ -18,13 +20,19 @@ function parseCsvLine(line) {
     for (let i = 0; i < line.length; i += 1) {
         const ch = line[i];
         if (ch === '"') {
-            const next = line[i + 1];
-            if (inQuotes && next === '"') { current += '"'; i += 1; }
-            else { inQuotes = !inQuotes; }
-            continue;
+            // Handle escaped quotes (double quotes "")
+            if (inQuotes && line[i + 1] === '"') {
+                current += '"';
+                i += 1;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (ch === ',' && !inQuotes) {
+            values.push(current.trim());
+            current = "";
+        } else {
+            current += ch;
         }
-        if (ch === "," && !inQuotes) { values.push(current.trim()); current = ""; continue; }
-        current += ch;
     }
     values.push(current.trim());
     return values;
@@ -131,7 +139,7 @@ async function persistAnomalyResult(userId, transactions, analysisResult) {
 
 // ── Routes ───────────────────────────────────────────────────────────────────
 
-router.post("/analyze", auth, async (req, res) => {
+router.post("/analyze", strictLimiter, auth, abuseMonitor, async (req, res) => {
     try {
         const { transactions } = req.body || {};
         if (!Array.isArray(transactions) || transactions.length < 3) {
@@ -139,6 +147,19 @@ router.post("/analyze", auth, async (req, res) => {
         }
 
         const data = await callTransactionAi(transactions);
+
+        // 3. Dispatch Real-time Alert (Phase 6)
+        if (data.anomaly_score > 0.6 || data.flagged_count > 0) {
+            const { alertService } = require("../services/alertService");
+            const alert = alertService.createThreatAlert("warning", {
+                level: data.risk_category || "MEDIUM",
+                title: "Financial Anomaly Detected",
+                message: `LifeVault AI flagged ${data.flagged_count} suspicious transactions in your recent activity.`,
+                confidence: data.overall_risk_score || 0.0,
+                metadata: { score: data.anomaly_score, flagged_count: data.flagged_count }
+            });
+            alertService.sendAlert(req.userId, alert);
+        }
 
         // Persist to DB (non-blocking)
         persistAnomalyResult(req.userId, transactions, data);
@@ -152,7 +173,7 @@ router.post("/analyze", auth, async (req, res) => {
     }
 });
 
-router.post("/upload-csv", auth, upload.single("file"), async (req, res) => {
+router.post("/upload-csv", strictLimiter, auth, abuseMonitor, upload.single("file"), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ status: "error", error: "BadRequest", message: "No CSV file uploaded" });
@@ -164,6 +185,19 @@ router.post("/upload-csv", auth, upload.single("file"), async (req, res) => {
         }
 
         const data = await callTransactionAi(transactions);
+
+        // 3. Dispatch Real-time Alert (Phase 6)
+        if (data.anomaly_score > 0.6 || data.flagged_count > 0) {
+            const { alertService } = require("../services/alertService");
+            const alert = alertService.createThreatAlert("warning", {
+                level: data.risk_category || "MEDIUM",
+                title: "Financial Anomaly Detected (CSV)",
+                message: `Uploaded statement contains ${data.flagged_count} flagged suspicious transactions.`,
+                confidence: data.overall_risk_score || 0.0,
+                metadata: { score: data.anomaly_score, flagged_count: data.flagged_count }
+            });
+            alertService.sendAlert(req.userId, alert);
+        }
 
         // Persist to DB (non-blocking)
         persistAnomalyResult(req.userId, transactions, data);

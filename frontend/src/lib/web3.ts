@@ -1,17 +1,17 @@
-﻿import { BrowserProvider, Contract, JsonRpcSigner } from "ethers";
+import { BrowserProvider, Contract, JsonRpcSigner } from "ethers";
 
 export const LOCAL_CHAIN_ID = 31337;
 export const LOCAL_CHAIN_HEX = "0x7a69";
 
 function ensureEthereum() {
-    if (!window.ethereum) {
-        throw new Error("Secure Wallet Connector not found. Install MetaMask and retry.");
-    }
-    return window.ethereum;
+    if (typeof window === "undefined") return undefined;
+    return (window as any).ethereum;
 }
 
 export async function getProvider() {
-    return new BrowserProvider(ensureEthereum());
+    const eth = ensureEthereum();
+    if (!eth) throw new Error("Secure Wallet Connector not found. Install MetaMask and retry.");
+    return new BrowserProvider(eth);
 }
 
 export async function getCurrentChainId(): Promise<number | null> {
@@ -92,6 +92,7 @@ export function disconnectWallet() {
 
 export function onWalletChange(onChange: (accounts: string[], chainId: number | null) => void) {
     const ethereum = ensureEthereum();
+    if (!ethereum) return () => {};
 
     const handleAccounts = async (accounts: string[]) => {
         const nextChainId = await getCurrentChainId();

@@ -1,4 +1,5 @@
-﻿"use client";
+"use client";
+import LiveSecurityFeed from "./LiveSecurityFeed";
 
 type ActiveSection = "dashboard" | "scam-detector" | "transaction-monitor" | "document-vault" | "selective-verifier" | "emergency-release";
 
@@ -122,24 +123,32 @@ export default function Dashboard({ walletAddress, setActiveSection }: Dashboard
                 </div>
             </div>
 
-            {/* Risk Scoring Explanation */}
-            <div className="glass-card p-6">
-                <h3 className="text-sm font-semibold text-white mb-4">ðŸ“ Risk Scoring Algorithm</h3>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                        <p className="text-xs font-semibold text-primary-400 mb-2">Phishing Score Formula</p>
-                        <div className="font-mono text-xs bg-dark-950/80 rounded-lg p-3 text-slate-300 space-y-1">
-                            <div>final_score = 0.4 Ã— heuristic + 0.6 Ã— model</div>
-                            <div className="text-slate-500">heuristic = keyword_score + url_score</div>
-                            <div className="text-slate-500">model = HuggingFace BERT confidence</div>
+            {/* Real-time Monitoring Section */}
+            <div className="grid lg:grid-cols-2 gap-6">
+                {/* Live Feed */}
+                <LiveSecurityFeed />
+
+                {/* Risk Scoring Explanation */}
+                <div className="glass-card p-6">
+                    <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2 text-primary-400">
+                        🛡️ Risk Scoring Engine
+                    </h3>
+                    <div className="space-y-6">
+                        <div>
+                            <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-widest">Phishing Score Formula</p>
+                            <div className="font-mono text-[11px] bg-slate-950/50 rounded-lg p-3 text-slate-300 border border-slate-800">
+                                <div className="text-cyan-400">final_score = 0.4 × heuristic + 0.6 × model</div>
+                                <div className="text-slate-500 mt-1">heuristic = keyword_score + url_score</div>
+                                <div className="text-slate-500">model = Transformer-based Ensemble</div>
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <p className="text-xs font-semibold text-accent-400 mb-2">Anomaly Score Formula</p>
-                        <div className="font-mono text-xs bg-dark-950/80 rounded-lg p-3 text-slate-300 space-y-1">
-                            <div>Isolation Forest decision_function()</div>
-                            <div className="text-slate-500">Features: amount, log_amount,</div>
-                            <div className="text-slate-500">merchant_freq, category, round_flag</div>
+                        <div>
+                            <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-widest">Anomaly Detection (ML)</p>
+                            <div className="font-mono text-[11px] bg-slate-950/50 rounded-lg p-3 text-slate-300 border border-slate-800">
+                                <div className="text-accent-400">Isolation Forest (Unsupervised)</div>
+                                <div className="text-slate-500 mt-1">Features: amount, log_amount, merchant_freq</div>
+                                <div className="text-slate-500">Threshold: dynamic clustering baseline</div>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import toast from "react-hot-toast";
 type ActiveSection = "dashboard" | "scam-detector" | "transaction-monitor" | "document-vault" | "selective-verifier" | "emergency-release";
 import { useWallet } from "@/context/WalletContext";
 import { useAuth } from "@/context/AuthContext";
+import { useSearchParams } from "next/navigation";
 
 const sectionTitles: Record<ActiveSection, { title: string; subtitle: string }> = {
     dashboard: { title: "Dashboard", subtitle: "Overview of your security posture" },
@@ -21,6 +22,8 @@ interface HeaderProps {
 
 export default function Header({ activeSection }: HeaderProps) {
     const [connecting, setConnecting] = useState(false);
+    const searchParams = useSearchParams();
+    const referralCode = searchParams.get("ref");
     const info = sectionTitles[activeSection];
     const { walletAddress, connect, disconnect, chainId, networkOk } = useWallet();
     const { isAuthenticated, ensureAuth, loginWithWalletSignature, logout, userEmail } = useAuth();
@@ -66,7 +69,7 @@ export default function Header({ activeSection }: HeaderProps) {
                         <div className="flex items-center gap-2">
                             <button onClick={ensureAuth} className="btn-ghost text-xs">Get JWT</button>
                             <button
-                                onClick={() => loginWithWalletSignature(walletAddress || "")}
+                                onClick={() => loginWithWalletSignature(walletAddress || "", referralCode || undefined)}
                                 disabled={!walletAddress}
                                 className="btn-ghost text-xs"
                             >

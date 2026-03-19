@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { analyzeScam, logActivity } from "@/lib/api";
 import { addWatchlistAlert, evaluateWatchlist } from "@/lib/watchlistDb";
 import { appendAuditLog, appendScamHistory } from "@/lib/localData";
+import ThreatExplanationPanel from "./ThreatExplanationPanel";
 
 interface PhishingResult {
     risk_score: number; // 0-1
@@ -15,6 +16,9 @@ interface PhishingResult {
     heuristic_score: number;
     model_confidence: number;
     scam_category?: string;
+    confidence_score: number; // New explainability field
+    top_features: string[]; // New explainability field
+    reasoning_string: string; // New explainability field
     url_analysis: {
         url: string;
         findings: string[];
@@ -200,25 +204,13 @@ export default function ScamDetector() {
                         </div>
                     </div>
 
-                    <div className="glass-card p-6 border-l-4 border-primary-500">
-                        <h4 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-                            AI Reasoning Panel
-                        </h4>
-                        <div className="space-y-3">
-                            {result.reasoning.map((reason, i) => (
-                                <div key={i} className="flex gap-2 items-start text-sm text-slate-300">
-                                    <span className="text-primary-400 mt-1">●</span>
-                                    <span>{reason}</span>
-                                </div>
-                            ))}
-                        </div>
-                        {result.scam_category && (
-                            <div className="mt-4 pt-4 border-t border-slate-800">
-                                <div className="text-[10px] uppercase font-bold text-slate-500">Classification</div>
-                                <div className="text-xs text-primary-300">{result.scam_category.replace("_", " ").toUpperCase()}</div>
-                            </div>
-                        )}
-                    </div>
+                    <ThreatExplanationPanel 
+                        score={result.risk_score}
+                        level={result.risk_level}
+                        reasoning={result.reasoning_string || result.reasoning[0]}
+                        topFeatures={result.top_features || []}
+                        recommendation={result.risk_level === "CRITICAL" ? "Do not interact. This is a high-confidence threat." : "Exercise caution if you proceed."}
+                    />
                 </div>
             )}
         </div>

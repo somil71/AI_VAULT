@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect } from "react";
 import useSWR from "swr";
@@ -14,19 +14,43 @@ import {
 } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
 import { getAdminStats } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Tooltip, Legend);
 
 const fetcher = async () => getAdminStats();
 
 export default function AdminDashboardPage() {
-    const { data, isLoading, error, mutate } = useSWR("admin-stats", fetcher, { refreshInterval: 15000, revalidateOnFocus: true });
+    const { isAuthenticated, ensureAuth } = useAuth();
+    const { data, isLoading, error, mutate } = useSWR(isAuthenticated ? "admin-stats" : null, fetcher, { refreshInterval: 15000, revalidateOnFocus: true });
 
     useEffect(() => {
         const onUpdated = () => mutate();
         window.addEventListener("lifevault:activity-updated", onUpdated);
         return () => window.removeEventListener("lifevault:activity-updated", onUpdated);
     }, [mutate]);
+
+    if (!isAuthenticated) {
+        return (
+            <div className="glass-card p-10 text-center space-y-6">
+                <div className="flex justify-center">
+                    <div className="w-16 h-16 rounded-full bg-[#1e3a52] flex items-center justify-center border border-amber-500/30">
+                        <span className="text-2xl">🔐</span>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <p className="text-xl font-semibold text-white">Admin Console Restricted</p>
+                    <p className="text-sm text-slate-400">Please sign in to view platform intelligence and operations telemetry.</p>
+                </div>
+                <button 
+                    className="btn-primary px-8 py-3" 
+                    onClick={() => ensureAuth()}
+                >
+                    Sign In for Demo
+                </button>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return <div className="glass-card p-6 text-sm text-slate-400">Loading admin analytics...</div>;

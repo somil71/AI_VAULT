@@ -22,7 +22,7 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error?.response?.status === 401 && typeof window !== "undefined") {
+        if (error?.response?.status === 401 && typeof window !== "undefined" && getJwt()) {
             clearJwt();
             window.dispatchEvent(new CustomEvent("lifevault:auth-expired"));
         }
@@ -82,8 +82,8 @@ export async function acquireDemoJwt() {
     // Auth routes still use legacy format (token at root level)
     const extractAuth = (resp: any) => {
         const body = resp.data;
-        // Handle: { token, user } OR { data: { token, user } } OR { status, data: { token, user } }
-        const token = body?.data?.token || body?.token;
+        // Handle: { token, user } OR { data: { token, user } } OR { status, data: { accessToken, user } }
+        const token = body?.data?.accessToken || body?.data?.token || body?.token;
         const user = body?.data?.user || body?.user;
         if (!token) throw new Error("No token in auth response");
         return { token, user: user || { email } };
@@ -133,7 +133,7 @@ export async function requestSignatureNonce(walletAddress: string) {
     };
 }
 
-export async function verifySignatureLogin(payload: { walletAddress: string; signature: string; nonce?: string; message?: string }) {
+export async function verifySignatureLogin(payload: { walletAddress: string; signature: string; nonce?: string; message?: string; referralCode?: string }) {
     const response = await tryEndpoint([
         () => apiClient.post("/auth/wallet/verify", payload),
         () => apiClient.post("/auth/verify-signature", payload),
@@ -144,14 +144,14 @@ export async function verifySignatureLogin(payload: { walletAddress: string; sig
     if (!response) return null;
     const body = (response as any).data;
     if (!body) return null;
-    const token = body.data?.token || body.token || null;
+    const token = body.data?.accessToken || body.data?.token || body.token || null;
     const user = body.data?.user || body.user || null;
     if (!token) return null;
     setJwt(token);
     return { token, user };
 }
 
-export async function loginWithWalletSignature(walletAddress: string, appName = "LifeVault") {
+export async function loginWithWalletSignature(walletAddress: string, referralCode?: string, appName = "LifeVault") {
     const noncePayload = await requestSignatureNonce(walletAddress);
     if (!noncePayload?.nonce) {
         throw new Error("Wallet signature login unavailable");
@@ -166,6 +166,7 @@ export async function loginWithWalletSignature(walletAddress: string, appName = 
         signature,
         nonce: noncePayload.nonce || undefined,
         message,
+        referralCode,
     });
 
     if (!verified?.token) {
@@ -291,6 +292,47 @@ export async function getScamContext(payload: { text?: string; url?: string }) {
 
 export async function enrichIntelligence(payload: { email?: string; url?: string; ip?: string }) {
     const response = await apiClient.post("/intelligence/enrich", payload);
+    return unwrap<any>(response);
+}
+
+export async function getCommunityStats() {
+    const response = await apiClient.get("/phishing/community/stats");
+    return unwrap<{ confirmedCount: number; totalEntries: number }>(response);
+}
+
+export async function getWalletReputation(address: string) {
+    const response = await apiClient.get(`/wallet/reputation/${address}`);
+    return unwrap<{ 
+        address: string; 
+        score: number; 
+        level: string; 
+        reasons: string[]; 
+        generatedAt: string 
+    }>(response);
+}
+
+export async function createCheckoutSession(priceId: string) {
+    const response = await apiClient.post("/billing/checkout", { priceId });
+    return unwrap<{ url: string }>(response);
+}
+
+export async function getMonthlyReport() {
+    const response = await apiClient.get("/user/reports/monthly");
+    return unwrap<{ content: string; stats: any }>(response);
+}
+
+export async function listVaults() {
+    const response = await apiClient.get("/vault/list");
+    return unwrap<any[]>(response);
+}
+
+export async function createVault(name: string, description: string) {
+    const response = await apiClient.post("/vault/create", { name, description });
+    return unwrap<any>(response);
+}
+
+export async function inviteToVault(vaultId: string, email: string, role: string) {
+    const response = await apiClient.post("/vault/invite", { vaultId, email, role });
     return unwrap<any>(response);
 }
 

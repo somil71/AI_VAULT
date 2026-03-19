@@ -1,0 +1,14 @@
+{
+  "source_directories": [
+    "ai-service"
+  ],
+  "python_interpreter": "C:/Users/Somil/Desktop/AI_SUMMIT/ai-service/venv/Scripts/python.exe",
+  "search_path": [
+    "C:/Users/Somil/Desktop/AI_SUMMIT/ai-service/venv/Lib/site-packages"
+  ],
+  "site_package_search_strategy": "all",
+  "exclude": [
+    "**/venv/**",
+    "**/node_modules/**"
+  ]
+}

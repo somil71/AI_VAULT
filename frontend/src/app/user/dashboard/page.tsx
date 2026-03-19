@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo } from "react";
 import useSWR from "swr";
@@ -14,7 +14,7 @@ import {
     Legend,
 } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
-import { getDashboardStats, getRecentActivity } from "@/lib/api";
+import { getDashboardStats, getRecentActivity, getCommunityStats } from "@/lib/api";
 import { useWallet } from "@/context/WalletContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -33,19 +33,25 @@ function statusBadge(status: string) {
 
 export default function UserDashboardPage() {
     const { walletAddress } = useWallet();
-    const { userEmail } = useAuth();
+    const { userEmail, user, isAuthenticated, ensureAuth } = useAuth();
 
-    const { data, error, isLoading, isValidating, mutate } = useSWR(["dashboard-stats", walletAddress || null, userEmail || null], fetcher, {
+    const swrKey = isAuthenticated ? ["dashboard-stats", walletAddress || null, userEmail || null] : null;
+    const feedKey = isAuthenticated ? ["dashboard-feed", walletAddress || null, userEmail || null] : null;
+
+    const { data, error, isLoading, isValidating, mutate } = useSWR(swrKey, fetcher, {
         refreshInterval: 15000,
         revalidateOnFocus: true,
         refreshWhenHidden: true,
         dedupingInterval: 2000,
     });
     const { data: feedData, mutate: mutateFeed } = useSWR(
-        ["dashboard-feed", walletAddress || null, userEmail || null],
+        feedKey,
         activityFetcher,
         { refreshInterval: 10000, revalidateOnFocus: true, refreshWhenHidden: true, dedupingInterval: 1000 },
     );
+    const { data: communityData } = useSWR(["community-stats"], () => getCommunityStats(), {
+        refreshInterval: 30000,
+    });
 
     useEffect(() => {
         const onUpdated = () => mutate();
@@ -54,13 +60,11 @@ export default function UserDashboardPage() {
         window.addEventListener("lifevault:activity-updated", onUpdated);
         window.addEventListener("lifevault:activity-updated", onFeedUpdated);
         window.addEventListener("lifevault:tx-confirmed", onUpdated as EventListener);
-        window.addEventListener("lifevault:auth-expired", onUpdated);
         window.addEventListener("accountsChanged", onWalletChanged as EventListener);
         return () => {
             window.removeEventListener("lifevault:activity-updated", onUpdated);
             window.removeEventListener("lifevault:activity-updated", onFeedUpdated);
             window.removeEventListener("lifevault:tx-confirmed", onUpdated as EventListener);
-            window.removeEventListener("lifevault:auth-expired", onUpdated);
             window.removeEventListener("accountsChanged", onWalletChanged as EventListener);
         };
     }, [mutate, mutateFeed]);
@@ -155,6 +159,37 @@ export default function UserDashboardPage() {
         ],
     };
 
+    if (!isAuthenticated) {
+        return (
+            <div className="glass-card p-10 text-center space-y-6">
+                <div className="flex justify-center">
+                    <div className="w-16 h-16 rounded-full bg-[#1e3a52] flex items-center justify-center border border-cyan-500/30">
+                        <span className="text-2xl">🔒</span>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <p className="text-xl font-semibold text-white">Dashboard Access Restricted</p>
+                    <p className="text-sm text-slate-400">Please sign in to view your protection metrics and security intelligence.</p>
+                </div>
+                <div className="flex gap-4">
+                    <button 
+                        onClick={ensureAuth} // Assuming ensureAuth is the correct handler for "Sign In for Demo"
+                        className="btn-primary px-8 py-3" 
+                    >
+                        Sign In for Demo
+                    </button>
+                    <a 
+                        href={`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/activity/export?format=csv`}
+                        target="_blank"
+                        className="btn-primary flex items-center gap-2"
+                    >
+                        Export Audit Log (CSV)
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
     if (isLoading) {
         return <div className="glass-card p-6 text-sm text-slate-400">Loading dashboard intelligence...</div>;
     }
@@ -169,9 +204,23 @@ export default function UserDashboardPage() {
                 <div className="relative z-10">
                     <h2 className="text-3xl font-semibold text-white">Executive Risk Overview</h2>
                     <p className="text-sm text-slate-300 mt-2 max-w-2xl">Live protection metrics, intelligence signals, and actionable guidance for your digital safety.</p>
-                    <div className="mt-4 flex items-center gap-2">
+                    <div className="mt-4 flex flex-wrap items-center gap-4">
                         <span className="risk-badge-low">Live</span>
                         <span className="text-xs text-slate-400">Last refresh: {generatedAt}</span>
+                        
+                        {user?.tier !== "free" && (
+                            <button
+                                onClick={async () => {
+                                    const { getMonthlyReport } = await import("@/lib/api");
+                                    const report = await getMonthlyReport();
+                                    alert(report.content); // Simplified for now, would open a modal/PDF in prod
+                                }}
+                                className="bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 text-xs px-4 py-2 rounded-lg border border-teal-500/30 transition-all font-semibold"
+                            >
+                                📊 Generate Monthly Report
+                            </button>
+                        )}
+
                         <button
                             className="btn-ghost text-xs"
                             onClick={() => {
@@ -186,8 +235,9 @@ export default function UserDashboardPage() {
                 </div>
             </div>
 
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="metric-card"><div className="text-xs text-slate-500">Total Protected Assets</div><div className="text-3xl font-bold text-cyan-300 mt-1">{kpis.total_protected_assets}</div><div className="text-[11px] text-slate-500 mt-2">Stored and secured locally</div></div>
+                <div className="metric-card"><div className="text-xs text-slate-500">Community Threats Blocked</div><div className="text-3xl font-bold text-teal-400 mt-1">{communityData?.confirmedCount || 0}</div><div className="text-[11px] text-slate-500 mt-2">Global proactive protection</div></div>
                 <div className="metric-card"><div className="text-xs text-slate-500">Risk Exposure Score</div><div className="text-3xl font-bold text-amber-300 mt-1">{kpis.risk_exposure_score}</div><div className="text-[11px] text-slate-500 mt-2">Composite risk intelligence</div></div>
                 <div className="metric-card"><div className="text-xs text-slate-500">Suspicious Alerts (30d)</div><div className="text-3xl font-bold text-rose-300 mt-1">{kpis.suspicious_alerts_30d}</div><div className="text-[11px] text-slate-500 mt-2">Watchlist and scam detections</div></div>
                 <div className="metric-card"><div className="text-xs text-slate-500">Vault Health Status</div><div className="mt-3"><span className={statusBadge(kpis.vault_health_status)}>{kpis.vault_health_status}</span></div><div className="text-[11px] text-slate-500 mt-3">Readiness snapshot</div></div>

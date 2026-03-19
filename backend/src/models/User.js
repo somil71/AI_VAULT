@@ -37,6 +37,26 @@ const UserSchema = new mongoose.Schema({
         default: "user",
         index: true,
     },
+    // ── MFA Fields ──────────────────────────────────────────
+    mfaSecret: {
+        type: String,
+        default: null,
+        select: false, // never returned by default
+    },
+    mfaEnabled: {
+        type: Boolean,
+        default: false,
+    },
+    // ── Account Lockout Fields ──────────────────────────────
+    failedLoginAttempts: {
+        type: Number,
+        default: 0,
+    },
+    lockedUntil: {
+        type: Date,
+        default: null,
+    },
+    // ── Timestamps ──────────────────────────────────────────
     createdAt: {
         type: Date,
         default: Date.now,
@@ -49,12 +69,35 @@ const UserSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    stripeCustomerId: {
+        type: String,
+        default: null,
+        index: true,
+    },
+    tier: {
+        type: String,
+        enum: ["free", "pro", "business", "enterprise"],
+        default: "free",
+        index: true,
+    },
+    referralCode: {
+        type: String,
+        unique: true,
+        sparse: true,
+        index: true,
+    },
+    referredBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+    },
     meta: {
         type: Map,
         of: String,
         default: {},
     },
 });
+
 
 UserSchema.index({ email: 1, walletAddress: 1 });
 

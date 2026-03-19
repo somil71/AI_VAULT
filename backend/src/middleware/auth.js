@@ -26,12 +26,31 @@ module.exports = (req, res, next) => {
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Phase 1: Session Binding (Anti-Replay / Anti-Theft)
+        // Verify that the token is used by the same device profile
+        const currentFingerprint = jwt.verify(token, process.env.JWT_SECRET).fingerprint;
+        const incomingFingerprint = `${req.ip}-${req.headers['user-agent']}`;
+        
+        // Note: In strict prod, we'd use a salted hash. For now, simple match.
+        if (decoded.fingerprint && decoded.fingerprint !== incomingFingerprint) {
+             logSecurityEvent(req, {
+                action: "stolen_token_attempt",
+                allowed: false,
+                statusCode: 403,
+                metadata: { reason: "fingerprint_mismatch", expected: decoded.fingerprint, actual: incomingFingerprint },
+            });
+            // We'll allow it for now to avoid breaking existing sessions, but log it.
+            // In a real 'hardened' system, we'd return 403.
+        }
+
         req.userId = decoded.userId;
         req.userEmail = decoded.email;
         req.user = {
             userId: decoded.userId,
             email: decoded.email,
             role: decoded.role || "user",
+            tier: decoded.tier || "free",
         };
         next();
     } catch (err) {

@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
@@ -7,9 +7,24 @@ import AppProviders from "@/context/AppProviders";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-    title: "LifeVault AI - Personal AI Guardian",
-    description: "AI-powered digital security: phishing detection, transaction monitoring, encrypted document vault, and emergency release tools.",
-    keywords: ["AI security", "phishing detection", "document vault", "fraud detection"],
+    title: "LifeVault AI — Personal AI Guardian for Digital & Financial Safety",
+    description: "Secure your digital legacy with LifeVault AI. Real-time phishing detection, Web3 wallet reputation, encrypted vaults, and automated threat reporting.",
+    keywords: ["AI security", "Web3 protection", "phishing detection", "crypto safety", "digital vault", "smart contract audit"],
+    openGraph: {
+        title: "LifeVault AI — Your Personal AI Guardian",
+        description: "Advanced AI protection for your digital and financial life.",
+        url: "https://lifevault.ai",
+        siteName: "LifeVault AI",
+        images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+        locale: "en_US",
+        type: "website",
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "LifeVault AI — Personal AI Guardian",
+        description: "AI-powered digital security for the Web3 era.",
+        images: ["/og-image.png"],
+    },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
